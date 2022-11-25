@@ -381,6 +381,27 @@ namespace DlibDotNet
             return new Matrix<T>(matrix);
         }
 
+        public static Matrix<T> LoadImageAsMatrix<T>(byte[] imgBytes)
+    where T : struct
+        {
+            if (!MatrixBase.TryParse(typeof(T), out var type))
+                throw new NotSupportedException($"{typeof(T).Name} does not support");
+
+            var str = imgBytes;
+
+            var matrixElementType = type.ToNativeMatrixElementType();
+            var ret = NativeMethods.load_image_matrix(matrixElementType, str, str.Length, out var matrix, out var errorMessage);
+            switch (ret)
+            {
+                case NativeMethods.ErrorType.MatrixElementTypeNotSupport:
+                    throw new ArgumentException($"{type} is not supported.");
+                case NativeMethods.ErrorType.GeneralFileImageLoad:
+                    throw new ImageLoadException("imageBytes", StringHelper.FromStdString(errorMessage));
+            }
+
+            return new Matrix<T>(matrix);
+        }
+
         /// <summary>
         /// This function loads JPEG (Joint Photographic Experts Group) file into an <see cref="Array2D{T}"/>.
         /// </summary>
